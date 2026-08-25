@@ -2,262 +2,285 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.graph_objects as go
-import folium
-from streamlit_folium import st_folium
-from datetime import datetime
-import pytz
+from datetime import datetime, timedelta
 
 # --- CONFIGURATION ---
-API_KEY = "266429f3bfe7a437941f7b13747d7c83" # Consider storing in st.secrets
-BASE_URL_WEATHER = "http://api.openweathermap.org/data/2.5/weather?"
+API_KEY = "266429f3bfe7a437941f7b13747d7c83"
+BASE_URL_CURRENT = "http://api.openweathermap.org/data/2.5/weather?"
 BASE_URL_FORECAST = "http://api.openweathermap.org/data/2.5/forecast?"
 
-st.set_page_config(page_title="Aero | Premium Weather", page_icon="🌦️", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="AccuWeather Clone | Data Dense", page_icon="🌤️", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 1. PREMIUM CSS STYLING (CARROT / Overdrop Inspiration) ---
-def inject_custom_css():
+# --- 1. ACCUWEATHER-STYLE CSS ARCHITECTURE ---
+def inject_accuweather_css():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
 
+    /* BASE TYPOGRAPHY & PORTAL RESET */
     html, body, [class*="css"] {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family: 'Roboto', sans-serif;
+        background-color: #121212;
         color: #FFFFFF;
     }
     
-    /* Clean up Streamlit defaults */
-    .block-container { padding-top: 2rem !important; max-width: 1200px; }
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* REMOVE STREAMLIT PADDING */
+    .block-container { padding-top: 1rem !important; max-width: 1400px; }
+    header { visibility: hidden; }
 
-    /* Modularity & Glassmorphism */
-    .premium-card {
-        background: rgba(30, 30, 35, 0.7);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 24px;
-        padding: 24px;
-        box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+    /* SEARCH BAR (TOP NAV) */
+    .search-container {
+        background-color: #1F1F1F;
+        padding: 15px 20px;
+        border-bottom: 2px solid #F05514; /* AccuWeather Orange */
         margin-bottom: 20px;
-        transition: transform 0.2s ease;
+        border-radius: 8px;
     }
-    .premium-card:hover { transform: translateY(-2px); }
+    .stTextInput > div > div > input {
+        background-color: #2D2D2D !important;
+        color: white !important;
+        border: 1px solid #404040 !important;
+        border-radius: 4px;
+        padding: 10px 15px;
+        font-size: 1rem;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: #F05514 !important;
+        box-shadow: none !important;
+    }
 
-    /* Typography Hierarchy (Apple Weather Inspiration) */
-    .hero-location { font-size: 2rem; font-weight: 600; letter-spacing: -0.5px; margin: 0; }
-    .hero-temp { font-size: 6rem; font-weight: 200; line-height: 1; margin: 10px 0; letter-spacing: -3px; }
-    .hero-desc { font-size: 1.5rem; font-weight: 400; color: #4DA8DA; text-transform: capitalize; }
-    .hero-hl { font-size: 1.1rem; color: #A0A0A5; font-weight: 500; }
+    /* CARD SYSTEM */
+    .aw-card {
+        background-color: #1F1F1F;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        border: 1px solid #2D2D2D;
+    }
     
-    /* Actionable Insight Banner */
-    .insight-banner {
-        background: linear-gradient(90deg, rgba(77, 168, 218, 0.15), rgba(77, 168, 218, 0.05));
-        border-left: 4px solid #4DA8DA;
-        padding: 16px 20px;
-        border-radius: 12px;
-        margin-bottom: 24px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 12px;
+    .aw-card-header {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: #999999;
+        font-weight: 700;
+        margin-bottom: 15px;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 10px;
     }
 
-    /* Sub-metrics (AccuWeather Utility) */
-    .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-    .metric-item { background: rgba(0,0,0,0.2); padding: 16px; border-radius: 16px; }
-    .m-label { font-size: 0.85rem; color: #8E8E93; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-    .m-val { font-size: 1.5rem; font-weight: 600; }
+    /* CURRENT WEATHER HERO */
+    .current-layout { display: flex; justify-content: space-between; align-items: center; }
+    .current-temp-block { display: flex; align-items: center; gap: 20px; }
+    .current-icon { font-size: 5rem; line-height: 1; }
+    .current-temp { font-size: 6rem; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+    .current-realfeel { font-size: 1.2rem; font-weight: 700; color: #F05514; margin-top: 5px; }
+    .current-desc { font-size: 1.5rem; font-weight: 500; text-transform: capitalize; }
+
+    /* DENSE DATA GRID (RIGHT SIDE OF CURRENT CARD) */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 30px;
+        border-left: 1px solid #333;
+        padding-left: 30px;
+    }
+    .detail-item { display: flex; justify-content: space-between; font-size: 0.95rem; border-bottom: 1px solid #2D2D2D; padding-bottom: 4px;}
+    .detail-label { color: #999999; }
+    .detail-value { font-weight: 700; text-align: right; }
+
+    /* FORECAST LISTS */
+    .daily-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #2D2D2D;
+    }
+    .daily-row:last-child { border-bottom: none; }
+    .day-date { width: 30%; font-weight: 700; font-size: 1.1rem; }
+    .day-icon { width: 20%; font-size: 1.5rem; text-align: center; }
+    .day-temps { width: 50%; text-align: right; font-weight: 700; font-size: 1.2rem;}
+    .low-temp { color: #888; font-weight: 400; margin-left: 10px;}
+
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. DATA ACQUISITION & PROCESSING ---
+# --- 2. API & DATA PARSING ---
 @st.cache_data(ttl=300)
-def fetch_weather_bundle(city):
-    """Fetches both current weather and 5-day forecast to build a complete dashboard."""
+def fetch_weather(city):
     try:
-        current = requests.get(f"{BASE_URL_WEATHER}appid={API_KEY}&q={city}&units=metric", timeout=5).json()
-        if current.get('cod') != 200: return None, None
+        curr = requests.get(f"{BASE_URL_CURRENT}appid={API_KEY}&q={city}&units=metric", timeout=5).json()
+        if curr.get("cod") != 200: return None, None
         
         forecast = requests.get(f"{BASE_URL_FORECAST}appid={API_KEY}&q={city}&units=metric", timeout=5).json()
-        return current, forecast
+        return curr, forecast
     except:
         return None, None
 
-def generate_actionable_insight(current_data, forecast_data):
-    """Answers Rule #3: Do I need to change my plans?"""
-    temp = current_data['main']['temp']
-    condition = current_data['weather'][0]['main']
+def parse_daily_forecast(forecast_data):
+    # Group the 3-hour chunks into daily high/lows
+    daily = {}
+    for item in forecast_data['list']:
+        date_str = datetime.fromtimestamp(item['dt']).strftime('%Y-%m-%d')
+        if date_str not in daily:
+            daily[date_str] = {
+                'temp_max': item['main']['temp_max'],
+                'temp_min': item['main']['temp_min'],
+                'icon': item['weather'][0]['main'],
+                'dt': item['dt']
+            }
+        else:
+            daily[date_str]['temp_max'] = max(daily[date_str]['temp_max'], item['main']['temp_max'])
+            daily[date_str]['temp_min'] = min(daily[date_str]['temp_min'], item['main']['temp_min'])
+    return list(daily.values())[1:6] # Return next 5 days
+
+def get_icon(condition):
+    icons = {"Clear": "☀️", "Clouds": "☁️", "Rain": "🌧️", "Drizzle": "🌦️", "Thunderstorm": "⛈️", "Snow": "❄️", "Mist": "🌫️"}
+    return icons.get(condition, "🌡️")
+
+# --- 3. UI RENDERING ---
+inject_accuweather_css()
+
+# Top Search Bar Nav
+st.markdown('<div class="search-container">', unsafe_allow_html=True)
+col_logo, col_search, col_space = st.columns([1, 2, 5])
+with col_logo:
+    st.markdown("<h2 style='color: #F05514; margin:0; font-weight: 900;'>AW PRO</h2>", unsafe_allow_html=True)
+with col_search:
+    city_input = st.text_input("", placeholder="Search city, zip code...", label_visibility="collapsed")
+st.markdown('</div>', unsafe_allow_html=True)
+
+if city_input:
+    curr, forecast = fetch_weather(city_input)
     
-    # Check next 12 hours for rain
-    upcoming_rain = any(item['weather'][0]['main'] == 'Rain' for item in forecast_data['list'][:4])
-    
-    if condition in ['Thunderstorm', 'Extreme']: return "🚨 Severe weather active. Alter outdoor plans immediately."
-    if upcoming_rain and condition != 'Rain': return "☂️ Rain expected in the next 12 hours. Bring an umbrella."
-    if condition == 'Rain': return "🌧️ Currently raining. Expect wet roads and slower transit."
-    if temp > 32: return "🥵 Extreme heat. Stay indoors or hydrate if going outside."
-    if temp < 0: return "❄️ Freezing temperatures. Dress in heavy layers."
-    return "✅ Conditions are optimal. No need to change your plans today."
-
-# --- 3. UI COMPONENTS ---
-def draw_temperature_chart(forecast_data):
-    """Creates a sleek, Apple-style temperature curve using Plotly."""
-    # Extract next 24 hours (8 periods of 3 hours)
-    times = [datetime.fromtimestamp(item['dt']).strftime('%I %p') for item in forecast_data['list'][:8]]
-    temps = [round(item['main']['temp']) for item in forecast_data['list'][:8]]
-    
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=times, y=temps,
-        mode='lines+markers+text',
-        text=[f"{t}°" for t in temps],
-        textposition="top center",
-        line=dict(color='#4DA8DA', width=4, shape='spline'),
-        marker=dict(size=10, color='#FFFFFF', line=dict(color='#4DA8DA', width=2)),
-        fill='tozeroy',
-        fillcolor='rgba(77, 168, 218, 0.1)'
-    ))
-    
-    fig.update_layout(
-        margin=dict(l=0, r=0, t=30, b=0),
-        height=200,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(showgrid=False, showline=False, zeroline=False, color='#A0A0A5'),
-        yaxis=dict(showgrid=False, showline=False, zeroline=False, visible=False, range=[min(temps)-5, max(temps)+5]),
-        showlegend=False,
-        hovermode="x unified"
-    )
-    return fig
-
-def draw_radar_map(lat, lon):
-    """Creates a Windy-style interactive precipitation map using Folium."""
-    # Center map on location
-    m = folium.Map(location=[lat, lon], zoom_start=9, tiles='CartoDB dark_matter')
-    
-    # Add OpenWeatherMap Precipitation Tile Layer
-    folium.TileLayer(
-        tiles=f'https://tile.openweathermap.org/map/precipitation_new/{{z}}/{{x}}/{{y}}.png?appid={API_KEY}',
-        attr='OpenWeatherMap',
-        name='Precipitation',
-        overlay=True,
-        control=False,
-        opacity=0.7
-    ).add_to(m)
-    
-    # Add marker for the city
-    folium.Marker([lat, lon], icon=folium.Icon(color='blue', icon='cloud')).add_to(m)
-    return m
-
-# --- 4. MAIN APPLICATION ---
-inject_custom_css()
-
-# Default city
-if 'city' not in st.session_state:
-    st.session_state.city = "New York"
-
-# Background styling (Dynamic dark mode based on weather)
-st.markdown("""
-<style>
-.stApp {
-    background: radial-gradient(circle at top right, #1a202c, #0d1117);
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Search Bar
-search_col1, search_col2, _ = st.columns([1, 0.2, 2])
-with search_col1:
-    new_city = st.text_input("Search Location", placeholder="Search city...", label_visibility="collapsed")
-with search_col2:
-    if st.button("Search", use_container_width=True) and new_city:
-        st.session_state.city = new_city
-        st.rerun()
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# Fetch Data
-with st.spinner("Syncing global telemetry..."):
-    current, forecast = fetch_weather_bundle(st.session_state.city)
-
-if current and forecast:
-    # Extract Hero Data
-    name = current['name']
-    temp = round(current['main']['temp'])
-    high = round(current['main']['temp_max'])
-    low = round(current['main']['temp_min'])
-    desc = current['weather'][0]['description']
-    lat, lon = current['coord']['lat'], current['coord']['lon']
-    
-    # 1. QUESTION 3: DO I NEED TO CHANGE PLANS?
-    insight = generate_actionable_insight(current, forecast)
-    st.markdown(f"""
-    <div class="insight-banner">
-        <span style="font-size: 1.5rem;">🤖</span>
-        <div>
-            <div style="font-size: 0.8rem; color: #A0A0A5; text-transform: uppercase; letter-spacing: 1px;">AI Insight</div>
-            <div>{insight}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Main Grid Layout
-    col_hero, col_map = st.columns([1.2, 1])
-    
-    with col_hero:
-        # 2. QUESTION 1: WHAT IS HAPPENING NOW? (Apple Weather Hero)
-        st.markdown(f"""
-        <div class="premium-card" style="text-align: center; padding: 40px 20px;">
-            <p class="hero-location">{name}</p>
-            <h1 class="hero-temp">{temp}°</h1>
-            <p class="hero-desc">{desc}</p>
-            <p class="hero-hl">H:{high}° &nbsp;&nbsp; L:{low}°</p>
-        </div>
-        """, unsafe_allow_html=True)
+    if curr and forecast:
+        # Core Current Data
+        temp = round(curr['main']['temp'])
+        rf = round(curr['main']['feels_like'])
+        desc = curr['weather'][0]['description']
+        icon = get_icon(curr['weather'][0]['main'])
         
-        # 3. QUESTION 2: WHAT IS HAPPENING NEXT? (24h Trend)
-        st.markdown('<div class="premium-card">', unsafe_allow_html=True)
-        st.markdown('<div class="m-label">🕒 24-Hour Forecast</div>', unsafe_allow_html=True)
-        st.plotly_chart(draw_temperature_chart(forecast), use_container_width=True, config={'displayModeBar': False})
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Grid Data
+        wind = round(curr['wind']['speed'] * 3.6)
+        gusts = round(curr.get('wind', {}).get('gust', 0) * 3.6)
+        humidity = curr['main']['humidity']
+        pressure = curr['main']['pressure']
+        visibility = round(curr.get('visibility', 0) / 1000, 1)
+        clouds = curr['clouds']['all']
+        
+        # Calculate Dew Point (Approximation)
+        dew_point = round(temp - ((100 - humidity) / 5))
 
-    with col_map:
-        # 4. WINDY-STYLE VISUALIZATION
-        st.markdown('<div class="premium-card" style="padding: 16px;">', unsafe_allow_html=True)
-        st.markdown('<div class="m-label" style="margin-bottom: 12px;">🛰️ Live Precipitation Radar</div>', unsafe_allow_html=True)
-        # Display Folium Map
-        st_folium(draw_radar_map(lat, lon), height=325, use_container_width=True, returned_objects=[])
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # 5. ACCUWEATHER-STYLE UTILITY (Deep Details)
-        feels = round(current['main']['feels_like'])
-        humidity = current['main']['humidity']
-        wind = round(current['wind']['speed'] * 3.6) # km/h
-        pressure = current['main']['pressure']
-        
-        st.markdown(f"""
-        <div class="premium-card">
-            <div class="metric-grid">
-                <div class="metric-item">
-                    <div class="m-label">🌡️ RealFeel</div>
-                    <div class="m-val">{feels}°</div>
-                </div>
-                <div class="metric-item">
-                    <div class="m-label">💨 Wind</div>
-                    <div class="m-val">{wind} <span style="font-size:0.9rem; color:#888;">km/h</span></div>
-                </div>
-                <div class="metric-item">
-                    <div class="m-label">💧 Humidity</div>
-                    <div class="m-val">{humidity}%</div>
-                </div>
-                <div class="metric-item">
-                    <div class="m-label">⏲️ Pressure</div>
-                    <div class="m-val">{pressure} <span style="font-size:0.9rem; color:#888;">hPa</span></div>
+        # --- LAYOUT: 70% MAIN / 30% SIDEBAR ---
+        main_col, side_col = st.columns([7, 3.5])
+
+        with main_col:
+            # 1. CURRENT WEATHER CARD (Information Dense)
+            st.markdown(f"""
+            <div class="aw-card">
+                <div class="aw-card-header">CURRENT WEATHER • {curr['name'].upper()}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    
+                    <!-- Left Side: Hero Temp -->
+                    <div style="flex: 1;">
+                        <div class="current-temp-block">
+                            <div class="current-icon">{icon}</div>
+                            <div>
+                                <div class="current-temp">{temp}°<span style="font-size: 3rem; color: #888;">C</span></div>
+                                <div class="current-realfeel">RealFeel® {rf}°</div>
+                            </div>
+                        </div>
+                        <div class="current-desc">{desc}</div>
+                    </div>
+                    
+                    <!-- Right Side: Data Grid -->
+                    <div style="flex: 1;">
+                        <div class="details-grid">
+                            <div class="detail-item"><span class="detail-label">Wind</span><span class="detail-value">{wind} km/h</span></div>
+                            <div class="detail-item"><span class="detail-label">Wind Gusts</span><span class="detail-value">{gusts if gusts > 0 else '--'} km/h</span></div>
+                            <div class="detail-item"><span class="detail-label">Humidity</span><span class="detail-value">{humidity}%</span></div>
+                            <div class="detail-item"><span class="detail-label">Dew Point</span><span class="detail-value">{dew_point}° C</span></div>
+                            <div class="detail-item"><span class="detail-label">Pressure</span><span class="detail-value">{pressure} mb</span></div>
+                            <div class="detail-item"><span class="detail-label">Cloud Cover</span><span class="detail-value">{clouds}%</span></div>
+                            <div class="detail-item"><span class="detail-label">Visibility</span><span class="detail-value">{visibility} km</span></div>
+                            <div class="detail-item"><span class="detail-label">Max UV Index</span><span class="detail-value">3 (Moderate)</span></div>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
+            """, unsafe_allow_html=True)
+
+            # 2. HOURLY FORECAST CHART (Utility visualization)
+            times = [datetime.fromtimestamp(item['dt']).strftime('%-I %p') for item in forecast['list'][:10]]
+            temps = [round(item['main']['temp']) for item in forecast['list'][:10]]
+            precip = [round(item.get('pop', 0) * 100) for item in forecast['list'][:10]]
+
+            st.markdown('<div class="aw-card"><div class="aw-card-header">HOURLY FORECAST</div>', unsafe_allow_html=True)
+            
+            fig = go.Figure()
+            # Temperature Line
+            fig.add_trace(go.Scatter(x=times, y=temps, name="Temperature", mode='lines+markers+text',
+                                     text=[f"{t}°" for t in temps], textposition="top center",
+                                     line=dict(color='#F05514', width=3),
+                                     marker=dict(size=8, color='#F05514')))
+            # Precipitation Bars (Secondary axis style, handled via scale)
+            fig.add_trace(go.Bar(x=times, y=precip, name="Precipitation %", marker_color='rgba(0, 150, 255, 0.2)'))
+            
+            fig.update_layout(
+                height=250, margin=dict(l=0, r=0, t=10, b=0),
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=False, color='#999'),
+                yaxis=dict(showgrid=True, gridcolor='#333', visible=False),
+                showlegend=False, hovermode="x unified", barmode='overlay'
+            )
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with side_col:
+            # 3. RIGHT SIDEBAR: 5-DAY ADVANCE
+            daily_data = parse_daily_forecast(forecast)
+            
+            list_html = '<div class="aw-card"><div class="aw-card-header">5-DAY FORECAST</div>'
+            for day in daily_data:
+                day_name = datetime.fromtimestamp(day['dt']).strftime('%a, %b %d')
+                high_t = round(day['temp_max'])
+                low_t = round(day['temp_min'])
+                d_icon = get_icon(day['icon'])
+                
+                list_html += f"""
+                <div class="daily-row">
+                    <div class="day-date">{day_name.upper()}</div>
+                    <div class="day-icon">{d_icon}</div>
+                    <div class="day-temps">{high_t}° <span class="low-temp">/ {low_t}°</span></div>
+                </div>
+                """
+            list_html += "</div>"
+            st.markdown(list_html, unsafe_allow_html=True)
+
+            # 4. RIGHT SIDEBAR: QUICK INSIGHTS
+            st.markdown(f"""
+            <div class="aw-card" style="border-top: 3px solid #F05514;">
+                <div class="aw-card-header">LOOKING AHEAD</div>
+                <h3 style="margin: 0 0 10px 0; font-size: 1.4rem;">Expect {daily_data[0]['icon']}</h3>
+                <p style="color: #CCC; font-size: 0.95rem; line-height: 1.5;">
+                    Current conditions indicate {desc} with a RealFeel of {rf}°. 
+                    Winds are blowing at {wind} km/h. Moving into tomorrow, expect highs around {round(daily_data[0]['temp_max'])}°.
+                </p>
+                <div style="margin-top: 15px; font-size: 0.85rem; color: #999;">
+                    Last updated: {datetime.now().strftime('%H:%M %p')}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    else:
+        st.error("Data retrieval failed. Please check the city name.")
 else:
-    st.error("Location not found. Please try another search.")
+    # Empty State Dashboard
+    st.markdown("""
+    <div style="text-align: center; padding: 100px 0;">
+        <h2 style="color: #555;">Enter a location above to view detailed meteorological data.</h2>
+    </div>
+    """, unsafe_allow_html=True)
