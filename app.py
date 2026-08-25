@@ -9,10 +9,10 @@ API_KEY = "266429f3bfe7a437941f7b13747d7c83"
 BASE_URL_CURRENT = "http://api.openweathermap.org/data/2.5/weather?"
 BASE_URL_FORECAST = "http://api.openweathermap.org/data/2.5/forecast?"
 
-st.set_page_config(page_title="AccuWeather Pro | Data Portal", page_icon="🌤️", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="SkyCast AI | Professional Weather", page_icon="🌦️", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 1. ACCUWEATHER-STYLE CSS ARCHITECTURE ---
-def inject_accuweather_css():
+# --- 1. DENSE DATA CSS ARCHITECTURE ---
+def inject_skycast_css():
     st.markdown(textwrap.dedent("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
@@ -28,7 +28,7 @@ def inject_accuweather_css():
     .search-container {
         background-color: #1F1F1F;
         padding: 15px 20px;
-        border-bottom: 2px solid #F05514;
+        border-bottom: 2px solid #FF4B2B;
         margin-bottom: 20px;
         border-radius: 8px;
     }
@@ -41,7 +41,7 @@ def inject_accuweather_css():
         font-size: 1rem;
     }
     .stTextInput > div > div > input:focus {
-        border-color: #F05514 !important;
+        border-color: #FF4B2B !important;
         box-shadow: none !important;
     }
 
@@ -67,7 +67,7 @@ def inject_accuweather_css():
     .current-temp-block { display: flex; align-items: center; gap: 20px; }
     .current-icon { font-size: 4.5rem; line-height: 1; }
     .current-temp { font-size: 5rem; font-weight: 700; line-height: 1; letter-spacing: -2px; }
-    .current-realfeel { font-size: 1.1rem; font-weight: 700; color: #F05514; margin-top: 5px; }
+    .current-realfeel { font-size: 1.1rem; font-weight: 700; color: #FF4B2B; margin-top: 5px; }
     .current-desc { font-size: 1.3rem; font-weight: 500; text-transform: capitalize; margin-top: 10px; }
 
     .details-grid {
@@ -128,12 +128,13 @@ def get_icon(condition):
     return icons.get(condition, "🌡️")
 
 # --- 3. UI RENDERING ---
-inject_accuweather_css()
+inject_skycast_css()
 
-# Search Bar Header
+# Header Navigation
 st.markdown(textwrap.dedent("""
 <div class="search-container">
-    <h2 style='color: #F05514; margin:0; font-weight: 900; display: inline-block; margin-right: 20px;'>ACCUWEATHER PRO</h2>
+    <h2 style='color: #FF4B2B; margin:0; font-weight: 900; display: inline-block; margin-right: 20px;'>SKYCAST AI</h2>
+    <span style='color: #888; font-size: 0.9rem;'>Professional Weather Intelligence</span>
 </div>
 """), unsafe_allow_html=True)
 
@@ -204,9 +205,9 @@ if city_input:
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=times, y=temps, name="Temperature", mode='lines+markers+text',
                                      text=[f"{t}°" for t in temps], textposition="top center",
-                                     line=dict(color='#F05514', width=3),
-                                     marker=dict(size=8, color='#F05514')))
-            fig.add_trace(go.Bar(x=times, y=precip, name="Precipitation %", marker_color='rgba(0, 150, 255, 0.2)'))
+                                     line=dict(color='#FF4B2B', width=3),
+                                     marker=dict(size=8, color='#FF4B2B')))
+            fig.add_trace(go.Bar(x=times, y=precip, name="Precipitation %", marker_color='rgba(255, 75, 43, 0.25)'))
             
             fig.update_layout(
                 height=250, margin=dict(l=0, r=0, t=20, b=0),
@@ -245,17 +246,17 @@ if city_input:
             """)
             st.markdown(forecast_card, unsafe_allow_html=True)
 
-            # Looking Ahead Module
+            # AI Insights Module
             summary_card = textwrap.dedent(f"""
-            <div class="aw-card" style="border-top: 3px solid #F05514;">
-                <div class="aw-card-header">LOOKING AHEAD</div>
+            <div class="aw-card" style="border-top: 3px solid #FF4B2B;">
+                <div class="aw-card-header">SKYCAST AI INSIGHTS</div>
                 <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">Expect {daily_data[0]['icon']}</h3>
                 <p style="color: #CCC; font-size: 0.9rem; line-height: 1.5;">
                     Current conditions indicate {desc} with a RealFeel of {rf}°. 
                     Winds are blowing at {wind} km/h. Tomorrow's high will reach around {round(daily_data[0]['temp_max'])}°.
                 </p>
                 <div style="margin-top: 15px; font-size: 0.8rem; color: #888;">
-                    Last updated: {datetime.now().strftime('%H:%M %p')}
+                    Telemetry timestamp: {datetime.now().strftime('%H:%M %p')}
                 </div>
             </div>
             """)
@@ -266,6 +267,6 @@ if city_input:
 else:
     st.markdown(textwrap.dedent("""
     <div style="text-align: center; padding: 100px 0;">
-        <h3 style="color: #666;">Enter a city name above to load atmospheric telemetry.</h3>
+        <h3 style="color: #666;">Enter a city name above to load atmospheric telemetry into SkyCast AI.</h3>
     </div>
     """), unsafe_allow_html=True)
