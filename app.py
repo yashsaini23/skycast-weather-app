@@ -8,14 +8,19 @@ API_KEY = "266429f3bfe7a437941f7b13747d7c83"
 BASE_URL_CURRENT = "http://api.openweathermap.org/data/2.5/weather?"
 BASE_URL_FORECAST = "http://api.openweathermap.org/data/2.5/forecast?"
 
-st.set_page_config(page_title="SkyCast AI | Weather Intelligence", page_icon="🌦️", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(
+    page_title="SkyCast AI | Weather Intelligence",
+    page_icon="🌦️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# --- HTML RENDER HELPER (Prevents raw code block rendering) ---
+# --- HTML RENDER HELPER ---
 def render_html(html_str):
     cleaned = "".join([line.strip() for line in html_str.split("\n") if line.strip()])
     st.markdown(cleaned, unsafe_allow_html=True)
 
-# --- 1. PREMIUM UI TYPOGRAPHY & STYLES ---
+# --- 1. RESPONSIVE MOBILE-FIRST CSS ARCHITECTURE ---
 def inject_skycast_css():
     css = """
     <style>
@@ -26,14 +31,21 @@ def inject_skycast_css():
         background-color: #0F1115;
         color: #E2E8F0;
     }
-    .block-container { padding-top: 1rem !important; max-width: 1400px; }
+    .block-container { 
+        padding-top: 0.5rem !important; 
+        padding-bottom: 1rem !important;
+        padding-left: 0.8rem !important;
+        padding-right: 0.8rem !important;
+        max-width: 1400px; 
+    }
     header { visibility: hidden; }
 
+    /* Header & Gradient Branding */
     .search-container {
         background-color: #161920;
-        padding: 18px 24px;
+        padding: 16px 20px;
         border-bottom: 1px solid #232733;
-        margin-bottom: 24px;
+        margin-bottom: 16px;
         border-radius: 12px;
         display: flex;
         align-items: center;
@@ -41,7 +53,7 @@ def inject_skycast_css():
     }
     .brand-title {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 2.2rem;
+        font-size: 2rem;
         font-weight: 700;
         background: linear-gradient(135deg, #FF4B2B 0%, #FF8533 100%);
         -webkit-background-clip: text;
@@ -51,86 +63,125 @@ def inject_skycast_css():
     }
     .brand-tagline {
         color: #64748B;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 500;
         letter-spacing: 0.3px;
     }
 
+    /* Input Fields */
     .stTextInput > div > div > input {
         background-color: #1A1D26 !important;
         color: #F8FAFC !important;
         border: 1px solid #2E3444 !important;
         border-radius: 8px;
-        padding: 12px 18px;
+        padding: 10px 14px;
         font-size: 0.95rem;
-        font-weight: 400;
     }
     .stTextInput > div > div > input:focus {
         border-color: #FF4B2B !important;
         box-shadow: 0 0 0 1px #FF4B2B !important;
     }
 
+    /* Weather Cards */
     .aw-card {
         background-color: #161920;
         border-radius: 12px;
-        padding: 22px;
-        margin-bottom: 20px;
+        padding: 18px;
+        margin-bottom: 14px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.25);
         border: 1px solid #232733;
     }
     .aw-card-header {
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
         color: #64748B;
         font-weight: 600;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
         letter-spacing: 1px;
         border-bottom: 1px solid #232733;
-        padding-bottom: 10px;
+        padding-bottom: 8px;
     }
 
-    .current-temp-block { display: flex; align-items: center; gap: 20px; }
-    .current-icon { font-size: 4.2rem; line-height: 1; }
+    /* Current Conditions Layout */
+    .current-main-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+    }
+    .current-temp-block { display: flex; align-items: center; gap: 14px; }
+    .current-icon { font-size: 3.8rem; line-height: 1; }
     .current-temp { 
         font-family: 'Space Grotesk', sans-serif;
-        font-size: 4.8rem; 
+        font-size: 4rem; 
         font-weight: 700; 
         line-height: 1; 
         letter-spacing: -2px;
         color: #F8FAFC;
     }
-    .current-realfeel { font-size: 0.95rem; font-weight: 500; color: #FF7B54; margin-top: 6px; }
-    .current-desc { font-size: 1.1rem; font-weight: 400; text-transform: capitalize; color: #94A3B8; margin-top: 8px; }
+    .current-realfeel { font-size: 0.9rem; font-weight: 500; color: #FF7B54; margin-top: 4px; }
+    .current-desc { font-size: 1rem; font-weight: 400; text-transform: capitalize; color: #94A3B8; margin-top: 6px; }
 
+    /* Grid Items */
     .details-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 12px 24px;
+        gap: 10px 20px;
         border-left: 1px solid #232733;
-        padding-left: 24px;
+        padding-left: 20px;
     }
     .detail-item { 
         display: flex; 
         justify-content: space-between; 
-        font-size: 0.88rem; 
+        font-size: 0.85rem; 
         border-bottom: 1px solid #1E222D; 
-        padding-bottom: 6px; 
+        padding-bottom: 4px; 
     }
     .detail-label { color: #64748B; font-weight: 400; }
     .detail-value { font-weight: 600; color: #E2E8F0; text-align: right; }
 
+    /* Daily Rows */
     .daily-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
+        padding: 9px 0;
         border-bottom: 1px solid #1E222D;
     }
-    .day-date { width: 35%; font-weight: 500; font-size: 0.9rem; color: #CBD5E1; }
-    .day-icon { width: 20%; font-size: 1.2rem; text-align: center; }
-    .day-temps { width: 45%; text-align: right; font-weight: 600; font-size: 1rem; color: #F8FAFC; }
-    .low-temp { color: #64748B; font-weight: 400; margin-left: 6px; }
+    .day-date { width: 38%; font-weight: 500; font-size: 0.85rem; color: #CBD5E1; }
+    .day-icon { width: 20%; font-size: 1.1rem; text-align: center; }
+    .day-temps { width: 42%; text-align: right; font-weight: 600; font-size: 0.95rem; color: #F8FAFC; }
+    .low-temp { color: #64748B; font-weight: 400; margin-left: 4px; }
+
+    /* --- MOBILE RESPONSIVE OVERRIDES --- */
+    @media (max-width: 768px) {
+        .search-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            padding: 14px;
+        }
+        .brand-title { font-size: 1.6rem; }
+        .brand-tagline { font-size: 0.75rem; }
+        
+        .current-main-flex {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .details-grid {
+            width: 100%;
+            grid-template-columns: 1fr 1fr;
+            border-left: none;
+            padding-left: 0;
+            border-top: 1px solid #232733;
+            padding-top: 12px;
+        }
+        .current-temp { font-size: 3.2rem; }
+        .current-icon { font-size: 3rem; }
+        .aw-card { padding: 14px; }
+    }
     </style>
     """
     render_html(css)
@@ -180,7 +231,7 @@ render_html("""
 </div>
 """)
 
-city_input = st.text_input("", placeholder="Search city or location (e.g. Chía, London, New York)...", label_visibility="collapsed")
+city_input = st.text_input("", placeholder="Search city (e.g. Chía, London, New York)...", label_visibility="collapsed")
 
 if city_input:
     curr, forecast = fetch_weather(city_input)
@@ -206,18 +257,18 @@ if city_input:
             render_html(f"""
             <div class="aw-card">
                 <div class="aw-card-header">CURRENT CONDITIONS • {curr['name'].upper()}</div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="current-main-flex">
                     <div style="flex: 1;">
                         <div class="current-temp-block">
                             <div class="current-icon">{icon}</div>
                             <div>
-                                <div class="current-temp">{temp}°<span style="font-size: 2.2rem; color: #64748B; font-weight: 400;">C</span></div>
+                                <div class="current-temp">{temp}°<span style="font-size: 1.8rem; color: #64748B; font-weight: 400;">C</span></div>
                                 <div class="current-realfeel">RealFeel® {rf}°</div>
                             </div>
                         </div>
                         <div class="current-desc">{desc}</div>
                     </div>
-                    <div style="flex: 1;">
+                    <div style="flex: 1; width: 100%;">
                         <div class="details-grid">
                             <div class="detail-item"><span class="detail-label">Wind</span><span class="detail-value">{wind} km/h</span></div>
                             <div class="detail-item"><span class="detail-label">Wind Gusts</span><span class="detail-value">{gusts if gusts > 0 else wind} km/h</span></div>
@@ -254,7 +305,7 @@ if city_input:
             fig.add_trace(go.Bar(x=times, y=precip, name="Precipitation %", marker_color='rgba(255, 75, 43, 0.18)'))
             
             fig.update_layout(
-                height=240, margin=dict(l=0, r=0, t=20, b=0),
+                height=220, margin=dict(l=0, r=0, t=20, b=0),
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                 xaxis=dict(showgrid=False, color='#64748B'),
                 yaxis=dict(showgrid=False, visible=False),
@@ -286,12 +337,12 @@ if city_input:
             render_html(f"""
             <div class="aw-card" style="border-top: 2px solid #FF4B2B;">
                 <div class="aw-card-header">LOOKING AHEAD</div>
-                <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 600; color: #F8FAFC;">Expect {daily_data[0]['icon']}</h3>
-                <p style="color: #94A3B8; font-size: 0.88rem; line-height: 1.5; margin: 0;">
+                <h3 style="margin: 0 0 6px 0; font-size: 1rem; font-weight: 600; color: #F8FAFC;">Expect {daily_data[0]['icon']}</h3>
+                <p style="color: #94A3B8; font-size: 0.85rem; line-height: 1.4; margin: 0;">
                     Current conditions indicate {desc} with a RealFeel of {rf}°. 
                     Winds are blowing at {wind} km/h. Tomorrow's high will reach around {round(daily_data[0]['temp_max'])}°.
                 </p>
-                <div style="margin-top: 14px; font-size: 0.78rem; color: #64748B;">
+                <div style="margin-top: 10px; font-size: 0.75rem; color: #64748B;">
                     Last sync: {datetime.now().strftime('%H:%M %p')}
                 </div>
             </div>
@@ -301,7 +352,7 @@ if city_input:
         st.error("City not found. Please verify spelling.")
 else:
     render_html("""
-    <div style="text-align: center; padding: 100px 0;">
+    <div style="text-align: center; padding: 60px 0;">
         <h3 style="color: #475569; font-weight: 500;">Enter a city name above to load atmospheric telemetry.</h3>
     </div>
     """)
