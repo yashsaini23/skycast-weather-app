@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import plotly.graph_objects as go
 from datetime import datetime
-import textwrap
 
 # --- CONFIGURATION ---
 API_KEY = "266429f3bfe7a437941f7b13747d7c83"
@@ -11,9 +10,14 @@ BASE_URL_FORECAST = "http://api.openweathermap.org/data/2.5/forecast?"
 
 st.set_page_config(page_title="SkyCast AI | Weather Intelligence", page_icon="🌦️", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 1. PREMIUM MARKET-STANDARD UI TYPOGRAPHY & DESIGN ---
+# --- HTML RENDER HELPER (Prevents raw code block rendering) ---
+def render_html(html_str):
+    cleaned = "".join([line.strip() for line in html_str.split("\n") if line.strip()])
+    st.markdown(cleaned, unsafe_allow_html=True)
+
+# --- 1. PREMIUM UI TYPOGRAPHY & STYLES ---
 def inject_skycast_css():
-    st.markdown(textwrap.dedent("""
+    css = """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
 
@@ -25,7 +29,6 @@ def inject_skycast_css():
     .block-container { padding-top: 1rem !important; max-width: 1400px; }
     header { visibility: hidden; }
 
-    /* Header & Gradient Branding */
     .search-container {
         background-color: #161920;
         padding: 18px 24px;
@@ -53,7 +56,6 @@ def inject_skycast_css():
         letter-spacing: 0.3px;
     }
 
-    /* Input Fields */
     .stTextInput > div > div > input {
         background-color: #1A1D26 !important;
         color: #F8FAFC !important;
@@ -68,7 +70,6 @@ def inject_skycast_css():
         box-shadow: 0 0 0 1px #FF4B2B !important;
     }
 
-    /* Weather Modules */
     .aw-card {
         background-color: #161920;
         border-radius: 12px;
@@ -89,7 +90,6 @@ def inject_skycast_css():
         padding-bottom: 10px;
     }
 
-    /* Hero Temperatures & Icons */
     .current-temp-block { display: flex; align-items: center; gap: 20px; }
     .current-icon { font-size: 4.2rem; line-height: 1; }
     .current-temp { 
@@ -103,7 +103,6 @@ def inject_skycast_css():
     .current-realfeel { font-size: 0.95rem; font-weight: 500; color: #FF7B54; margin-top: 6px; }
     .current-desc { font-size: 1.1rem; font-weight: 400; text-transform: capitalize; color: #94A3B8; margin-top: 8px; }
 
-    /* Telemetry Grid (Selective Bolding) */
     .details-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -121,7 +120,6 @@ def inject_skycast_css():
     .detail-label { color: #64748B; font-weight: 400; }
     .detail-value { font-weight: 600; color: #E2E8F0; text-align: right; }
 
-    /* 5-Day Forecast Row Styling */
     .daily-row {
         display: flex;
         justify-content: space-between;
@@ -134,7 +132,8 @@ def inject_skycast_css():
     .day-temps { width: 45%; text-align: right; font-weight: 600; font-size: 1rem; color: #F8FAFC; }
     .low-temp { color: #64748B; font-weight: 400; margin-left: 6px; }
     </style>
-    """), unsafe_allow_html=True)
+    """
+    render_html(css)
 
 # --- 2. API & DATA PARSING ---
 @st.cache_data(ttl=300)
@@ -171,15 +170,15 @@ def get_icon(condition):
 # --- 3. UI RENDERING ---
 inject_skycast_css()
 
-# Header Section with Gradient Title
-st.markdown(textwrap.dedent("""
+# Header Section
+render_html("""
 <div class="search-container">
     <div>
         <h1 class="brand-title">SKYCAST AI</h1>
     </div>
     <div class="brand-tagline">ATMOSPHERIC INTELLIGENCE ENGINE</div>
 </div>
-"""), unsafe_allow_html=True)
+""")
 
 city_input = st.text_input("", placeholder="Search city or location (e.g. Chía, London, New York)...", label_visibility="collapsed")
 
@@ -204,7 +203,7 @@ if city_input:
 
         with main_col:
             # Current Conditions Module
-            card_html = textwrap.dedent(f"""
+            render_html(f"""
             <div class="aw-card">
                 <div class="aw-card-header">CURRENT CONDITIONS • {curr['name'].upper()}</div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -233,17 +232,17 @@ if city_input:
                 </div>
             </div>
             """)
-            st.markdown(card_html, unsafe_allow_html=True)
 
             # Hourly Forecast Module
             times = [datetime.fromtimestamp(item['dt']).strftime('%-I %p') for item in forecast['list'][:10]]
             temps = [round(item['main']['temp']) for item in forecast['list'][:10]]
             precip = [round(item.get('pop', 0) * 100) for item in forecast['list'][:10]]
 
-            st.markdown(textwrap.dedent("""
+            render_html("""
             <div class="aw-card">
                 <div class="aw-card-header">HOURLY FORECAST</div>
-            """), unsafe_allow_html=True)
+            </div>
+            """)
             
             fig = go.Figure()
             fig.add_trace(go.Scatter(
@@ -262,7 +261,6 @@ if city_input:
                 showlegend=False, hovermode="x unified", barmode='overlay'
             )
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-            st.markdown("</div>", unsafe_allow_html=True)
 
         with side_col:
             # 5-Day Forecast Module
@@ -275,24 +273,17 @@ if city_input:
                 low_t = round(day['temp_min'])
                 d_icon = get_icon(day['icon'])
                 
-                rows_html += f"""
-                <div class="daily-row">
-                    <div class="day-date">{day_name.upper()}</div>
-                    <div class="day-icon">{d_icon}</div>
-                    <div class="day-temps">{high_t}° <span class="low-temp">/ {low_t}°</span></div>
-                </div>
-                """
+                rows_html += f'<div class="daily-row"><div class="day-date">{day_name.upper()}</div><div class="day-icon">{d_icon}</div><div class="day-temps">{high_t}° <span class="low-temp">/ {low_t}°</span></div></div>'
             
-            forecast_card = textwrap.dedent(f"""
+            render_html(f"""
             <div class="aw-card">
                 <div class="aw-card-header">5-DAY FORECAST</div>
                 {rows_html}
             </div>
             """)
-            st.markdown(forecast_card, unsafe_allow_html=True)
 
             # Insights Module
-            summary_card = textwrap.dedent(f"""
+            render_html(f"""
             <div class="aw-card" style="border-top: 2px solid #FF4B2B;">
                 <div class="aw-card-header">LOOKING AHEAD</div>
                 <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 600; color: #F8FAFC;">Expect {daily_data[0]['icon']}</h3>
@@ -305,13 +296,12 @@ if city_input:
                 </div>
             </div>
             """)
-            st.markdown(summary_card, unsafe_allow_html=True)
 
     else:
         st.error("City not found. Please verify spelling.")
 else:
-    st.markdown(textwrap.dedent("""
+    render_html("""
     <div style="text-align: center; padding: 100px 0;">
         <h3 style="color: #475569; font-weight: 500;">Enter a city name above to load atmospheric telemetry.</h3>
     </div>
-    """), unsafe_allow_html=True)
+    """)
