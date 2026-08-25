@@ -9,89 +9,130 @@ API_KEY = "266429f3bfe7a437941f7b13747d7c83"
 BASE_URL_CURRENT = "http://api.openweathermap.org/data/2.5/weather?"
 BASE_URL_FORECAST = "http://api.openweathermap.org/data/2.5/forecast?"
 
-st.set_page_config(page_title="SkyCast AI | Professional Weather", page_icon="🌦️", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="SkyCast AI | Weather Intelligence", page_icon="🌦️", layout="wide", initial_sidebar_state="collapsed")
 
-# --- 1. DENSE DATA CSS ARCHITECTURE ---
+# --- 1. PREMIUM MARKET-STANDARD UI TYPOGRAPHY & DESIGN ---
 def inject_skycast_css():
     st.markdown(textwrap.dedent("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'Roboto', sans-serif;
-        background-color: #121212;
-        color: #FFFFFF;
+        font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+        background-color: #0F1115;
+        color: #E2E8F0;
     }
     .block-container { padding-top: 1rem !important; max-width: 1400px; }
     header { visibility: hidden; }
 
+    /* Header & Gradient Branding */
     .search-container {
-        background-color: #1F1F1F;
-        padding: 15px 20px;
-        border-bottom: 2px solid #FF4B2B;
-        margin-bottom: 20px;
-        border-radius: 8px;
+        background-color: #161920;
+        padding: 18px 24px;
+        border-bottom: 1px solid #232733;
+        margin-bottom: 24px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
+    .brand-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #FF4B2B 0%, #FF8533 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.5px;
+        margin: 0;
+    }
+    .brand-tagline {
+        color: #64748B;
+        font-size: 0.85rem;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+
+    /* Input Fields */
     .stTextInput > div > div > input {
-        background-color: #2D2D2D !important;
-        color: white !important;
-        border: 1px solid #404040 !important;
-        border-radius: 4px;
-        padding: 10px 15px;
-        font-size: 1rem;
+        background-color: #1A1D26 !important;
+        color: #F8FAFC !important;
+        border: 1px solid #2E3444 !important;
+        border-radius: 8px;
+        padding: 12px 18px;
+        font-size: 0.95rem;
+        font-weight: 400;
     }
     .stTextInput > div > div > input:focus {
         border-color: #FF4B2B !important;
-        box-shadow: none !important;
+        box-shadow: 0 0 0 1px #FF4B2B !important;
     }
 
+    /* Weather Modules */
     .aw-card {
-        background-color: #1F1F1F;
-        border-radius: 8px;
-        padding: 20px;
+        background-color: #161920;
+        border-radius: 12px;
+        padding: 22px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        border: 1px solid #2D2D2D;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        border: 1px solid #232733;
     }
     .aw-card-header {
-        font-size: 0.9rem;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.8rem;
         text-transform: uppercase;
-        color: #999999;
-        font-weight: 700;
-        margin-bottom: 15px;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid #333;
+        color: #64748B;
+        font-weight: 600;
+        margin-bottom: 16px;
+        letter-spacing: 1px;
+        border-bottom: 1px solid #232733;
         padding-bottom: 10px;
     }
 
+    /* Hero Temperatures & Icons */
     .current-temp-block { display: flex; align-items: center; gap: 20px; }
-    .current-icon { font-size: 4.5rem; line-height: 1; }
-    .current-temp { font-size: 5rem; font-weight: 700; line-height: 1; letter-spacing: -2px; }
-    .current-realfeel { font-size: 1.1rem; font-weight: 700; color: #FF4B2B; margin-top: 5px; }
-    .current-desc { font-size: 1.3rem; font-weight: 500; text-transform: capitalize; margin-top: 10px; }
+    .current-icon { font-size: 4.2rem; line-height: 1; }
+    .current-temp { 
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 4.8rem; 
+        font-weight: 700; 
+        line-height: 1; 
+        letter-spacing: -2px;
+        color: #F8FAFC;
+    }
+    .current-realfeel { font-size: 0.95rem; font-weight: 500; color: #FF7B54; margin-top: 6px; }
+    .current-desc { font-size: 1.1rem; font-weight: 400; text-transform: capitalize; color: #94A3B8; margin-top: 8px; }
 
+    /* Telemetry Grid (Selective Bolding) */
     .details-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px 20px;
-        border-left: 1px solid #333;
-        padding-left: 20px;
+        gap: 12px 24px;
+        border-left: 1px solid #232733;
+        padding-left: 24px;
     }
-    .detail-item { display: flex; justify-content: space-between; font-size: 0.9rem; border-bottom: 1px solid #2D2D2D; padding-bottom: 4px; }
-    .detail-label { color: #999999; }
-    .detail-value { font-weight: 700; text-align: right; }
+    .detail-item { 
+        display: flex; 
+        justify-content: space-between; 
+        font-size: 0.88rem; 
+        border-bottom: 1px solid #1E222D; 
+        padding-bottom: 6px; 
+    }
+    .detail-label { color: #64748B; font-weight: 400; }
+    .detail-value { font-weight: 600; color: #E2E8F0; text-align: right; }
 
+    /* 5-Day Forecast Row Styling */
     .daily-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 0;
-        border-bottom: 1px solid #2D2D2D;
+        padding: 10px 0;
+        border-bottom: 1px solid #1E222D;
     }
-    .day-date { width: 35%; font-weight: 700; font-size: 0.95rem; }
-    .day-icon { width: 20%; font-size: 1.3rem; text-align: center; }
-    .day-temps { width: 45%; text-align: right; font-weight: 700; font-size: 1.1rem; }
-    .low-temp { color: #888; font-weight: 400; margin-left: 8px; }
+    .day-date { width: 35%; font-weight: 500; font-size: 0.9rem; color: #CBD5E1; }
+    .day-icon { width: 20%; font-size: 1.2rem; text-align: center; }
+    .day-temps { width: 45%; text-align: right; font-weight: 600; font-size: 1rem; color: #F8FAFC; }
+    .low-temp { color: #64748B; font-weight: 400; margin-left: 6px; }
     </style>
     """), unsafe_allow_html=True)
 
@@ -130,15 +171,17 @@ def get_icon(condition):
 # --- 3. UI RENDERING ---
 inject_skycast_css()
 
-# Header Navigation
+# Header Section with Gradient Title
 st.markdown(textwrap.dedent("""
 <div class="search-container">
-    <h2 style='color: #FF4B2B; margin:0; font-weight: 900; display: inline-block; margin-right: 20px;'>SKYCAST AI</h2>
-    <span style='color: #888; font-size: 0.9rem;'>Professional Weather Intelligence</span>
+    <div>
+        <h1 class="brand-title">SKYCAST AI</h1>
+    </div>
+    <div class="brand-tagline">ATMOSPHERIC INTELLIGENCE ENGINE</div>
 </div>
 """), unsafe_allow_html=True)
 
-city_input = st.text_input("", placeholder="Enter city name (e.g. Chía, London, New York)...", label_visibility="collapsed")
+city_input = st.text_input("", placeholder="Search city or location (e.g. Chía, London, New York)...", label_visibility="collapsed")
 
 if city_input:
     curr, forecast = fetch_weather(city_input)
@@ -160,16 +203,16 @@ if city_input:
         main_col, side_col = st.columns([7, 3.5])
 
         with main_col:
-            # Current Weather Module
+            # Current Conditions Module
             card_html = textwrap.dedent(f"""
             <div class="aw-card">
-                <div class="aw-card-header">CURRENT WEATHER • {curr['name'].upper()}</div>
+                <div class="aw-card-header">CURRENT CONDITIONS • {curr['name'].upper()}</div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="flex: 1;">
                         <div class="current-temp-block">
                             <div class="current-icon">{icon}</div>
                             <div>
-                                <div class="current-temp">{temp}°<span style="font-size: 2.5rem; color: #888;">C</span></div>
+                                <div class="current-temp">{temp}°<span style="font-size: 2.2rem; color: #64748B; font-weight: 400;">C</span></div>
                                 <div class="current-realfeel">RealFeel® {rf}°</div>
                             </div>
                         </div>
@@ -192,7 +235,7 @@ if city_input:
             """)
             st.markdown(card_html, unsafe_allow_html=True)
 
-            # Hourly Forecast Chart
+            # Hourly Forecast Module
             times = [datetime.fromtimestamp(item['dt']).strftime('%-I %p') for item in forecast['list'][:10]]
             temps = [round(item['main']['temp']) for item in forecast['list'][:10]]
             precip = [round(item.get('pop', 0) * 100) for item in forecast['list'][:10]]
@@ -203,16 +246,18 @@ if city_input:
             """), unsafe_allow_html=True)
             
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=times, y=temps, name="Temperature", mode='lines+markers+text',
-                                     text=[f"{t}°" for t in temps], textposition="top center",
-                                     line=dict(color='#FF4B2B', width=3),
-                                     marker=dict(size=8, color='#FF4B2B')))
-            fig.add_trace(go.Bar(x=times, y=precip, name="Precipitation %", marker_color='rgba(255, 75, 43, 0.25)'))
+            fig.add_trace(go.Scatter(
+                x=times, y=temps, name="Temperature", mode='lines+markers+text',
+                text=[f"{t}°" for t in temps], textposition="top center",
+                line=dict(color='#FF4B2B', width=2.5),
+                marker=dict(size=6, color='#FF8533')
+            ))
+            fig.add_trace(go.Bar(x=times, y=precip, name="Precipitation %", marker_color='rgba(255, 75, 43, 0.18)'))
             
             fig.update_layout(
-                height=250, margin=dict(l=0, r=0, t=20, b=0),
+                height=240, margin=dict(l=0, r=0, t=20, b=0),
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                xaxis=dict(showgrid=False, color='#999'),
+                xaxis=dict(showgrid=False, color='#64748B'),
                 yaxis=dict(showgrid=False, visible=False),
                 showlegend=False, hovermode="x unified", barmode='overlay'
             )
@@ -246,27 +291,27 @@ if city_input:
             """)
             st.markdown(forecast_card, unsafe_allow_html=True)
 
-            # AI Insights Module
+            # Insights Module
             summary_card = textwrap.dedent(f"""
-            <div class="aw-card" style="border-top: 3px solid #FF4B2B;">
-                <div class="aw-card-header">SKYCAST AI INSIGHTS</div>
-                <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">Expect {daily_data[0]['icon']}</h3>
-                <p style="color: #CCC; font-size: 0.9rem; line-height: 1.5;">
+            <div class="aw-card" style="border-top: 2px solid #FF4B2B;">
+                <div class="aw-card-header">LOOKING AHEAD</div>
+                <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; font-weight: 600; color: #F8FAFC;">Expect {daily_data[0]['icon']}</h3>
+                <p style="color: #94A3B8; font-size: 0.88rem; line-height: 1.5; margin: 0;">
                     Current conditions indicate {desc} with a RealFeel of {rf}°. 
                     Winds are blowing at {wind} km/h. Tomorrow's high will reach around {round(daily_data[0]['temp_max'])}°.
                 </p>
-                <div style="margin-top: 15px; font-size: 0.8rem; color: #888;">
-                    Telemetry timestamp: {datetime.now().strftime('%H:%M %p')}
+                <div style="margin-top: 14px; font-size: 0.78rem; color: #64748B;">
+                    Last sync: {datetime.now().strftime('%H:%M %p')}
                 </div>
             </div>
             """)
             st.markdown(summary_card, unsafe_allow_html=True)
 
     else:
-        st.error("City not found. Please double-check the spelling.")
+        st.error("City not found. Please verify spelling.")
 else:
     st.markdown(textwrap.dedent("""
     <div style="text-align: center; padding: 100px 0;">
-        <h3 style="color: #666;">Enter a city name above to load atmospheric telemetry into SkyCast AI.</h3>
+        <h3 style="color: #475569; font-weight: 500;">Enter a city name above to load atmospheric telemetry.</h3>
     </div>
     """), unsafe_allow_html=True)
